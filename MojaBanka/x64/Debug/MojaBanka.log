@@ -1,7 +1,1 @@
-﻿  functions.c
-D:\MojaBanka\MojaBanka\functions.c(89,32): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-D:\MojaBanka\MojaBanka\functions.c(98,32): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-D:\MojaBanka\MojaBanka\functions.c(112,32): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-D:\MojaBanka\MojaBanka\functions.c(125,32): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-D:\MojaBanka\MojaBanka\functions.c(147): warning C4715: 'pretragaKorisnika': not all control paths return a value
-LINK : fatal error LNK1168: cannot open D:\MojaBanka\x64\Debug\MojaBanka.exe for writing
+﻿LINK : fatal error LNK1168: cannot open D:\Faks\Git\Client-Server-Fiktivne-Banke\x64\Debug\MojaBanka.exe for writing

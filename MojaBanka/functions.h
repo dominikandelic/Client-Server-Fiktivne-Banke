@@ -5,7 +5,7 @@
 typedef struct racun {
 	int tip_racuna;
 	double saldo;
-	char* iban;
+	char iban[22];
 } RACUN;
 
 typedef struct datum {
@@ -19,9 +19,11 @@ typedef struct korisnik {
 	char prezime[25];
 	char adresa[35];
 	char prebivaliste[35];
+	char oib[12];
 	int broj_racuna;
 	char postanski_broj[6];
-	RACUN* trasankc_racuni;
+	DATUM datum_rodenja;
+	RACUN trasankc_racuni[4];
 } KORISNIK;
 
 void izbornik(const char*);
@@ -33,5 +35,9 @@ void stvoriKonekciju(void);
 KORISNIK* pretragaKorisnika(const char*);
 KORISNIK* ucitajKorisnike(const char*);
 void ispisSvihKorisnika(const char*);
-void brisanjeKorisnika(KORISNIK**, const char*);
+void brisanjeKorisnika(KORISNIK*, const char*);
+void dodajRacun(KORISNIK*, const char*);
+void generiranjeIbana(KORISNIK*, int);
+void pretragaPoIbanu(const char* nazivDatoteke, char* trazeniIban);
+void upravljajRacunom(KORISNIK*, int, const char*);
 #endif

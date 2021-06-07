@@ -6,15 +6,23 @@
 static int brojKorisnika = 0;
 static KORISNIK* trazeni;
 static KORISNIK* poljeKorisnika = NULL;
+static TECAJ tecaj = 0;
 
 void izbornik(const char* nazivDatoteke) {
 
 	FILE* dat = fopen(nazivDatoteke, "rb");
-
+	int f = -1;
 	if (dat == NULL) {
 		dat = fopen(nazivDatoteke, "wb");
 	}
 	fclose(dat);
+
+
+	FILE* tecaj_dat = fopen("tecaj.bin", "rb");
+
+	if (tecaj_dat == NULL) {
+		tecaj_dat = fopen("tecaj.bin", "wb");
+	}
 
 	char trazeniIban[22];
 
@@ -26,6 +34,7 @@ void izbornik(const char* nazivDatoteke) {
 		printf("1. Kreiranje korisnika\n");
 		printf("2. Dodavanje racuna\n");
 		printf("3. Upravljanje racunima\n");
+		printf("4. Tecajna lista\n");
 		printf("5. Ispis svih korisnika\n");
 		printf("6. Pretraga\n");
 		printf("8. Brisanje korisnika\n");
@@ -47,6 +56,42 @@ void izbornik(const char* nazivDatoteke) {
 			printf("Unesite IBAN racuna kojim zelite upravljati: ");
 			scanf("%21s", trazeniIban);
 			pretragaPoIbanu(nazivDatoteke, trazeniIban);
+		case 4:
+			tecaj_dat = fopen(nazivDatoteke, "rb+");
+			if (tecaj_dat == NULL) {
+				perror("Otvaranje tecajne liste");
+			} else {
+
+
+				fread(&tecaj, sizeof(TECAJ), 1, tecaj_dat);
+				printf("Unesite srednji tecaj za Australski dolar: ");
+				scanf("%f", &tecaj.aud);
+				printf("\n");
+				printf("Unesite srednji tecaj za Americki dolar: ");
+				scanf("%f", &tecaj.usd);
+				printf("\n");
+				printf("Unesite srednji tecaj za Europski eur: ");
+				scanf("%f", &tecaj.eur);
+				printf("\n");
+				printf("Unesite srednji tecaj za Svicarski franak: ");
+				scanf("%f", &tecaj.chf);
+				printf("\n");
+				f = 1;
+				}
+
+				if (f == 1) {
+					rewind(tecaj_dat);
+					fwrite(&tecaj, sizeof(TECAJ), 1, tecaj_dat);
+				}
+				fclose(tecaj_dat);
+
+				printf("Tecajna lista na danasnji dan: \n");
+				printf("USD: %f\n", tecaj.usd);
+				printf("EUR: %f\n", tecaj.eur);
+				printf("CHF: %f\n", tecaj.chf);
+				printf("AUD: %f\n", tecaj.aud);
+			}
+			break;
 		case 5:
 			ispisSvihKorisnika(nazivDatoteke);
 			break;
@@ -133,7 +178,7 @@ KORISNIK* pretragaKorisnika(const char* nazivDatoteke) {
 
 	int odabir, i, id;
 	char oib[12];
-	printf("Upisite broj po cemu zelite pretraziti korisnika:\n1) ID-u\n2) OIB-u\nOdabir: ");
+	printf("Upisite broj po kojem zelite pretraziti korisnika:\n1) ID-u\n2) OIB-u\nOdabir: ");
 	scanf("%d", &odabir);
 	switch (odabir) {
 	case 1:
@@ -324,10 +369,12 @@ void pretragaPoIbanu(const char* nazivDatoteke, char* trazeniIban) {
 }
 
 void upravljajRacunom(KORISNIK* trazeniKorisnik, int pozicija, const char* nazivDatoteke) {
-	printf("Sto zelite promijeniti?\n1) Tip racuna\n2) Saldo\nOdabir: ");
+	printf("Sto zelite promijeniti?\n1) Tip racuna\n2) Saldo\n3) Obrisi racun\nOdabir: ");
 	int odabir;
 	int tip_racuna;
 	double saldo;
+	int i, f = -1;
+	char potvrda[3];
 	scanf("%d", &odabir);
 
 	switch (odabir) {
@@ -341,12 +388,57 @@ void upravljajRacunom(KORISNIK* trazeniKorisnik, int pozicija, const char* naziv
 		scanf("%lf", &saldo);
 		trazeniKorisnik->trasankc_racuni[pozicija].saldo = saldo;
 		break;
+	case 3:
+		printf("Jeste li sigurni?\nda/ne: ");
+		scanf("%2s", potvrda);
+		if (strcmp(potvrda, "da") == 0) {
+			for (i = 0; i < trazeniKorisnik->broj_racuna; i++) {
+				if (i == pozicija) {
+					// Ako iduci racun nije prazan, prebaci taj u trenutni
+					if (trazeniKorisnik->trasankc_racuni[i + 1].iban != NULL) {
+						trazeniKorisnik->trasankc_racuni[i].saldo = trazeniKorisnik->trasankc_racuni[i + 1].saldo;
+						trazeniKorisnik->trasankc_racuni[i].tip_racuna = trazeniKorisnik->trasankc_racuni[i + 1].tip_racuna;
+						strcpy(trazeniKorisnik->trasankc_racuni[i].iban, trazeniKorisnik->trasankc_racuni[i + 1].iban);
+						trazeniKorisnik->broj_racuna--;
+						// Postavi zastavicu koja prepisuje sad sve buduce vrijednosti za +1
+						f = 1;
+						continue;
+					}
+					// Inace samo stavi sve vrijednosti na 0
+					else {
+						trazeniKorisnik->trasankc_racuni[i].saldo = 0;
+						trazeniKorisnik->trasankc_racuni[i].tip_racuna = 0;
+						strcpy(trazeniKorisnik->trasankc_racuni[i].iban, "");
+						trazeniKorisnik->broj_racuna--;
+						// Postavi zastavicu koja prepisuje sad sve buduce vrijednosti za +1
+						f = 1;
+						continue;
+					}
+				}
+				if (f == 1) {
+					if (trazeniKorisnik->trasankc_racuni[i + 1].iban != NULL) {
+						trazeniKorisnik->trasankc_racuni[i].saldo = trazeniKorisnik->trasankc_racuni[i + 1].saldo;
+						trazeniKorisnik->trasankc_racuni[i].tip_racuna = trazeniKorisnik->trasankc_racuni[i + 1].tip_racuna;
+						strcpy(trazeniKorisnik->trasankc_racuni[i].iban, trazeniKorisnik->trasankc_racuni[i + 1].iban);
+						trazeniKorisnik->broj_racuna--;
+					}
+					else {
+						trazeniKorisnik->trasankc_racuni[i].saldo = 0;
+						trazeniKorisnik->trasankc_racuni[i].tip_racuna = 0;
+						strcpy(trazeniKorisnik->trasankc_racuni[i].iban, "");
+						trazeniKorisnik->broj_racuna--;
+						f = 1;
+						continue;
+					}
+				}
+			}
+		}
 	default:
 		printf("Opcija ne postoji.");
 		break;
 	}
 
-	int pozicija_korisnika = 0, i;
+	int pozicija_korisnika = 0;
 
 	for (i = 0; i < brojKorisnika; i++) {
 		if ((poljeKorisnika + i)->id == trazeniKorisnik->id) {

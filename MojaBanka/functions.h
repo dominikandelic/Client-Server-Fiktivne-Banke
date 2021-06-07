@@ -13,6 +13,13 @@ typedef struct datum {
 	unsigned short mjesec;
 	unsigned short godina;
 } DATUM;
+
+typedef struct tecaj {
+	float usd;
+	float eur;
+	float aud;
+	float chf;
+} TECAJ;
 typedef struct korisnik {
 	int id;
 	char ime[25];

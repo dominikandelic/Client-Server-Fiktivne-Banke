@@ -2,6 +2,8 @@
 #define FUNCTIONS_H
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
+#define LOZINKA_N 9
+
 typedef struct racun {
 	int tip_racuna;
 	double saldo;
@@ -27,6 +29,7 @@ typedef struct korisnik {
 	char adresa[35];
 	char prebivaliste[35];
 	char oib[12];
+	char lozinka[9];
 	int broj_racuna;
 	char postanski_broj[6];
 	DATUM datum_rodenja;
@@ -47,4 +50,7 @@ void dodajRacun(KORISNIK*, const char*);
 void generiranjeIbana(KORISNIK*, int);
 void pretragaPoIbanu(const char* nazivDatoteke, char* trazeniIban);
 void upravljajRacunom(KORISNIK*, int, const char*);
+void upravljanjeTecajnomListom(void);
+int brisanjeTecajneListe(void);
+char* generiranjeLozinke(void);
 #endif

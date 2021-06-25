@@ -1,4 +1,7 @@
 ﻿  functions.c
-D:\Faks\Git\Client-Server-Fiktivne-Banke\MojaBanka\functions.c(484,100): warning C4244: '=': conversion from 'float' to 'char', possible loss of data
-D:\Faks\Git\Client-Server-Fiktivne-Banke\MojaBanka\functions.c(217): warning C4715: 'pretragaKorisnika': not all control paths return a value
-  MojaBanka.vcxproj -> D:\Faks\Git\Client-Server-Fiktivne-Banke\Debug\MojaBanka.exe
+D:\Faks\Git\Client-Server-Fiktivne-Banke\MojaBanka\functions.c(490,100): warning C4244: '=': conversion from 'float' to 'char', possible loss of data
+D:\Faks\Git\Client-Server-Fiktivne-Banke\MojaBanka\functions.c(570,53): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+D:\Faks\Git\Client-Server-Fiktivne-Banke\MojaBanka\functions.c(573,62): warning C4244: '=': conversion from 'float' to 'char', possible loss of data
+D:\Faks\Git\Client-Server-Fiktivne-Banke\MojaBanka\functions.c(576,62): warning C4244: '=': conversion from 'float' to 'char', possible loss of data
+D:\Faks\Git\Client-Server-Fiktivne-Banke\MojaBanka\functions.c(579,63): warning C4244: '=': conversion from 'float' to 'char', possible loss of data
+LINK : fatal error LNK1168: cannot open D:\Faks\Git\Client-Server-Fiktivne-Banke\Debug\MojaBanka.exe for writing

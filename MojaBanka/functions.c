@@ -3,27 +3,23 @@
 #include <stdio.h>
 #include <string.h>
 
+#define LOZINKA_N 9
+
 static int brojKorisnika = 0;
 static KORISNIK* trazeni;
 static KORISNIK* poljeKorisnika = NULL;
-static TECAJ tecaj = 0;
+static TECAJ tecaj = { 0 };
 
 void izbornik(const char* nazivDatoteke) {
 
 	FILE* dat = fopen(nazivDatoteke, "rb");
-	int f = -1;
 	if (dat == NULL) {
 		dat = fopen(nazivDatoteke, "wb");
 	}
 	fclose(dat);
 
-
-	FILE* tecaj_dat = fopen("tecaj.bin", "rb");
-
-	if (tecaj_dat == NULL) {
-		tecaj_dat = fopen("tecaj.bin", "wb");
-	}
-
+	int ret;
+	char lozinka[9];
 	char trazeniIban[22];
 
 	int opcija;
@@ -34,9 +30,10 @@ void izbornik(const char* nazivDatoteke) {
 		printf("1. Kreiranje korisnika\n");
 		printf("2. Dodavanje racuna\n");
 		printf("3. Upravljanje racunima\n");
-		printf("4. Tecajna lista\n");
-		printf("5. Ispis svih korisnika\n");
-		printf("6. Pretraga\n");
+		printf("4. Dodavanje/ispis tecajne liste\n");
+		printf("5. Brisanje tecajne liste\n");
+		printf("6. Ispis svih korisnika\n");
+		printf("7. Pretraga\n");
 		printf("8. Brisanje korisnika\n");
 		printf("9. Izlazak iz programa\n");
 		printf("Odabir: ");
@@ -50,61 +47,72 @@ void izbornik(const char* nazivDatoteke) {
 			break;
 		case 2:
 			trazeni = pretragaKorisnika(nazivDatoteke);
+			if (trazeni == NULL) {
+				printf("Korisnik nije pronaden.\n");
+				break;
+			}
 			dodajRacun(trazeni, nazivDatoteke);
 			break;
 		case 3:
 			printf("Unesite IBAN racuna kojim zelite upravljati: ");
 			scanf("%21s", trazeniIban);
 			pretragaPoIbanu(nazivDatoteke, trazeniIban);
+			break;
 		case 4:
-			tecaj_dat = fopen(nazivDatoteke, "rb+");
-			if (tecaj_dat == NULL) {
-				perror("Otvaranje tecajne liste");
-			} else {
-
-
-				fread(&tecaj, sizeof(TECAJ), 1, tecaj_dat);
-				printf("Unesite srednji tecaj za Australski dolar: ");
-				scanf("%f", &tecaj.aud);
-				printf("\n");
-				printf("Unesite srednji tecaj za Americki dolar: ");
-				scanf("%f", &tecaj.usd);
-				printf("\n");
-				printf("Unesite srednji tecaj za Europski eur: ");
-				scanf("%f", &tecaj.eur);
-				printf("\n");
-				printf("Unesite srednji tecaj za Svicarski franak: ");
-				scanf("%f", &tecaj.chf);
-				printf("\n");
-				f = 1;
-				}
-
-				if (f == 1) {
-					rewind(tecaj_dat);
-					fwrite(&tecaj, sizeof(TECAJ), 1, tecaj_dat);
-				}
-				fclose(tecaj_dat);
-
-				printf("Tecajna lista na danasnji dan: \n");
-				printf("USD: %f\n", tecaj.usd);
-				printf("EUR: %f\n", tecaj.eur);
-				printf("CHF: %f\n", tecaj.chf);
-				printf("AUD: %f\n", tecaj.aud);
-			}
+			upravljanjeTecajnomListom();
 			break;
 		case 5:
-			ispisSvihKorisnika(nazivDatoteke);
+			ret = brisanjeTecajneListe();
+			if (ret == -1) {
+				printf("Dogodila se pogreska prilikom brisanja datoteke, postoji li uopce?\n");
+			}
+			else if (ret == -2) {
+				break;
+			} else {
+				printf("Uspjesno obrisana tecajna lista.\n");
+			}
 			break;
 		case 6:
+			ispisSvihKorisnika(nazivDatoteke);
+			break;
+		case 7:
 			trazeni = pretragaKorisnika(nazivDatoteke);
+			if (trazeni == NULL) {
+				printf("Korisnik nije pronaden.\n");
+				break;
+			}
 			break;
 		case 8:
 			printf("BRISANJE KORISNIKA\n");
 			trazeni = pretragaKorisnika(nazivDatoteke);
+			if (trazeni == NULL) {
+				printf("Korisnik nije pronaden.\n");
+				break;
+			}
 			brisanjeKorisnika(trazeni, nazivDatoteke);
 			break;
 		case 9:
 			exit(EXIT_SUCCESS);
+			break;
+
+		//TESTNE OPCIJE
+		case 10:
+			trazeni = pretragaKorisnika(nazivDatoteke);
+			if (trazeni == NULL) {
+				printf("Korisnik nije pronaden.\n");
+				break;
+			}
+			printf("Unesite Vasu lozinku: ");
+			scanf("%8s", lozinka);
+			if (strcmp(trazeni->lozinka, lozinka) == 0) {
+				printf("Uspjesna prijava!\n");
+			}
+			else {
+				printf("Neuspjeh.\n");
+			}
+			break;
+		case 11:
+			puts(generiranjeLozinke());
 			break;
 		}
 	}
@@ -142,6 +150,7 @@ void kreiranjeKorisnika(const char* nazivDatoteke) {
 
 	korisnici.id = id;
 	korisnici.broj_racuna = 0;
+	
 	printf("Unesite ime korisnika: \n");
 	scanf("%24s", korisnici.ime);
 	printf("Unesite prezime korisnika: \n");
@@ -160,11 +169,17 @@ void kreiranjeKorisnika(const char* nazivDatoteke) {
 	printf("Unesite OIB korisnika: \n");
 	fgets(korisnici.oib, sizeof(korisnici.oib), stdin);
 
+	strcpy(korisnici.lozinka, generiranjeLozinke());
+
+	printf("\nSAMO JEDNOM CE SE PRIKAZATI!\nLozinka za prijavu klijenta u sustav: %s\n", korisnici.lozinka);
+
 	fwrite(&brojKorisnika, sizeof(int), 1, dat);
 	fwrite(&id, sizeof(int), 1, dat);
 	fseek(dat, 2 * sizeof(int) + sizeof(KORISNIK) * brojKorisnika - sizeof(KORISNIK), SEEK_SET);
 	fwrite(&korisnici, sizeof(KORISNIK), 1, dat);
 	fclose(dat);
+
+
 
 }
 
@@ -204,6 +219,8 @@ KORISNIK* pretragaKorisnika(const char* nazivDatoteke) {
 		return NULL;
 	}
 
+	return NULL;
+
 }
 
 KORISNIK* ucitajKorisnike(const char* nazivDatoteke) {
@@ -213,7 +230,6 @@ KORISNIK* ucitajKorisnike(const char* nazivDatoteke) {
 		return NULL;
 	}
 	fread(&brojKorisnika, sizeof(int), 1, dat);
-	printf("Broj korisnika: %d\n", brojKorisnika);
 	poljeKorisnika = (KORISNIK*)calloc(brojKorisnika, sizeof(KORISNIK));
 	if (poljeKorisnika == NULL) {
 		perror("Zauzimanje memorije za korisnike");
@@ -475,4 +491,97 @@ void generiranjeIbana(KORISNIK *trazeniKorisnik, int broj_racuna) {
 	}
 
 	return;
+}
+
+void upravljanjeTecajnomListom(void) {
+	FILE* tecaj_dat = fopen("tecaj.bin", "rb+");
+	int f = -1;
+	if (tecaj_dat == NULL) {
+		tecaj_dat = fopen("tecaj.bin", "wb");
+		if (tecaj_dat == NULL) {
+			perror("Otvaranje tecajne liste");
+			return;
+		}
+	}
+
+	fread(&tecaj, sizeof(TECAJ), 1, tecaj_dat);
+	if (tecaj.aud == 0.00) {
+		printf("Unesite srednji tecaj za Australski dolar: ");
+		scanf("%f", &tecaj.aud);
+		printf("Unesite srednji tecaj za Americki dolar: ");
+		scanf("%f", &tecaj.usd);
+		printf("Unesite srednji tecaj za Europski eur: ");
+		scanf("%f", &tecaj.eur);
+		printf("Unesite srednji tecaj za Svicarski franak: ");
+		scanf("%f", &tecaj.chf);
+		f = 1;
+	}
+	if (f == 1) {
+		rewind(tecaj_dat);
+		fwrite(&tecaj, sizeof(TECAJ), 1, tecaj_dat);
+	}
+
+
+	fclose(tecaj_dat);
+
+	printf("Tecajna lista na danasnji dan: \n");
+	printf("1 USD: %.2fHRK\n", tecaj.usd);
+	printf("1 EUR: %.2fHRK\n", tecaj.eur);
+	printf("1 CHF: %.2fHRK\n", tecaj.chf);
+	printf("1 AUD: %.2fHRK\n", tecaj.aud);
+	return;
+}
+
+int brisanjeTecajneListe(void) {
+	char odabir[3];
+
+	printf("Jeste li sigurni? (da/ne)\nOdabir: ");
+	scanf("%2s", odabir);
+	if (strcmp(odabir, "da") == 0) {
+		if (remove("tecaj.bin") == 0) {
+			tecaj.aud = 0;
+			tecaj.usd = 0;
+			tecaj.chf = 0;
+			tecaj.eur = 0;
+			return 0;
+		}
+		else {
+			return -1;
+		}
+	}
+	else {
+		return -2;
+	}
+}
+
+char* generiranjeLozinke(void) {
+	int i;
+	char* lozinka = (char*)calloc(LOZINKA_N, sizeof(char));
+	if (lozinka == NULL) {
+		return NULL;
+	}
+	int nasumicno;
+
+	for (i = 0; i < LOZINKA_N; i++) {
+		if (i == (LOZINKA_N - 1)) {
+			*(lozinka + i) = '\0';
+			continue;
+		}
+		nasumicno = 1 + (float)rand() / RAND_MAX * (4 - 1);
+		switch (nasumicno) {
+		case 1:
+			*(lozinka + i) = 48 + (float)rand() / RAND_MAX * (57 - 48);
+			break;
+		case 2:
+			*(lozinka + i) = 65 + (float)rand() / RAND_MAX * (90 - 65);
+			break;
+		case 3:
+			*(lozinka + i) = 97 + (float)rand() / RAND_MAX * (122 - 97);
+			break;
+		default:
+			break;
+		}
+	}
+
+	return lozinka;
 }

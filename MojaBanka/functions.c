@@ -324,7 +324,7 @@ void brisanjeKorisnika(KORISNIK* trazeniKorisnik, const char* nazivDatoteke) {
 	for (i = 0; i < brojKorisnika; i++)
 	{
 		//DEBUG printf("Trazeni: %d Petlja: %d", trazeniKorisnik->id, (poljeKorisnika + i)->id);
-		if ((poljeKorisnika + i)->id != trazeniKorisnik->id) {
+		if ((poljeKorisnika + i)->id == trazeniKorisnik->id) {
 			f = 1;
 		}
 		if ((poljeKorisnika + i)->id != trazeniKorisnik->id) {

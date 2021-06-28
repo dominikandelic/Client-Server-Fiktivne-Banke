@@ -1,7 +1,6 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 #define _CRT_SECURE_NO_WARNINGS
-#include <stdio.h>
 #define LOZINKA_N 9
 
 typedef struct racun {
@@ -48,9 +47,21 @@ void ispisSvihKorisnika(const char*);
 void brisanjeKorisnika(KORISNIK*, const char*);
 void dodajRacun(KORISNIK*, const char*);
 void generiranjeIbana(KORISNIK*, int);
-void pretragaPoIbanu(const char* nazivDatoteke, char* trazeniIban);
+void pretragaPoIbanu(const char*, char*);
+int pretragaPoIbanuKlijent(KORISNIK*, char*);
 void upravljajRacunom(KORISNIK*, int, const char*);
 void upravljanjeTecajnomListom(void);
 int brisanjeTecajneListe(void);
 char* generiranjeLozinke(void);
+void klijentSucelje(KORISNIK*, const char*);
+void promjenaLozinkeKlijenta(KORISNIK*, const char*);
+void upravljanjePlacanjemKlijenta(KORISNIK*, const char*);
+int placanjeKlijenta(int, const char*, KORISNIK*, char*);
+int provjeraOdredisnogIbana(double, char*, const char*);
+void ispisTransakcijaKlijent(KORISNIK*, const char*);
+void ispisSvihTransakcija(const char*);
+void zamjena(double* const, double* const);
+void sortiranje(double*, const int, const int);
+void sortiranjeImenaKorisnika(const char*);
+KORISNIK* pretragaKorisnikaRekurzija(const char*);
 #endif

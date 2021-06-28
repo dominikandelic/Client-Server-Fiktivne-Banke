@@ -21,12 +21,9 @@
   <ItemGroup>
     <ClCompile Include="functions.c" />
     <ClCompile Include="main.c" />
-    <ClCompile Include="mongoose.c" />
-    <ClCompile Include="networking.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="functions.h" />
-    <ClInclude Include="mongoose.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

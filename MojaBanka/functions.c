@@ -2,13 +2,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <conio.h>
 #define LOZINKA_N 9
+void unos(void);
 
 static int brojKorisnika = 0;
 static KORISNIK* trazeni;
 static KORISNIK* poljeKorisnika = NULL;
 static TECAJ tecaj = { 0 };
+static int korisnik_id;
 
 void izbornik(const char* nazivDatoteke) {
 
@@ -21,6 +23,7 @@ void izbornik(const char* nazivDatoteke) {
 	int ret;
 	char lozinka[9];
 	char trazeniIban[22];
+	char* placanja = "placanja.txt";
 
 	int opcija;
 	while (1) {
@@ -36,6 +39,9 @@ void izbornik(const char* nazivDatoteke) {
 		printf("7. Pretraga\n");
 		printf("8. Brisanje korisnika\n");
 		printf("9. Izlazak iz programa\n");
+		printf("10. Klijent sucelje\n");
+		printf("11. Ispis svih transakcija\n");
+		printf("12. Sortiranje imena korisnika\n");
 		printf("Odabir: ");
 
 
@@ -92,27 +98,49 @@ void izbornik(const char* nazivDatoteke) {
 			brisanjeKorisnika(trazeni, nazivDatoteke);
 			break;
 		case 9:
+			if (poljeKorisnika != NULL) {
+				free(poljeKorisnika);
+				poljeKorisnika = NULL;
+			}
 			exit(EXIT_SUCCESS);
 			break;
 
-		//TESTNE OPCIJE
 		case 10:
+			// Korisnik se prijavljuje pomocu ID-a ili OIB-a i lozinke
 			trazeni = pretragaKorisnika(nazivDatoteke);
 			if (trazeni == NULL) {
 				printf("Korisnik nije pronaden.\n");
 				break;
 			}
 			printf("Unesite Vasu lozinku: ");
-			scanf("%8s", lozinka);
+			int i;
+			for (i = 0; i < LOZINKA_N - 1; i++) {
+				lozinka[i] = _getch();
+
+				printf("*");
+			}
+			lozinka[i] = '\0';
+			printf("\n");
 			if (strcmp(trazeni->lozinka, lozinka) == 0) {
 				printf("Uspjesna prijava!\n");
+				klijentSucelje(trazeni, nazivDatoteke);
 			}
 			else {
 				printf("Neuspjeh.\n");
 			}
 			break;
 		case 11:
-			puts(generiranjeLozinke());
+			// ISPIS SVIH TRANSAKCIJA I UZLAZNO SORTIRANJE POJEDINOG IZNOSA TRANSAKCIJE - SELECTION SORT
+			ispisSvihTransakcija(placanja);
+			break;
+		case 12:
+			sortiranjeImenaKorisnika(nazivDatoteke);
+			break;
+		case 13:
+			unos();
+			break;
+		default:
+			printf("Unijeli ste opciju koja ne postoji.\n");
 			break;
 		}
 	}
@@ -169,7 +197,11 @@ void kreiranjeKorisnika(const char* nazivDatoteke) {
 	printf("Unesite OIB korisnika: \n");
 	fgets(korisnici.oib, sizeof(korisnici.oib), stdin);
 
-	strcpy(korisnici.lozinka, generiranjeLozinke());
+	char* lozinka = generiranjeLozinke();
+	strcpy(korisnici.lozinka, lozinka);
+
+	free(lozinka);
+	lozinka = NULL;
 
 	printf("\nSAMO JEDNOM CE SE PRIKAZATI!\nLozinka za prijavu klijenta u sustav: %s\n", korisnici.lozinka);
 
@@ -241,10 +273,11 @@ KORISNIK* ucitajKorisnike(const char* nazivDatoteke) {
 		printf("Nema korisnika");
 		return NULL;
 	}
-	int i;
+	/*int i;
 	for (i = 0; i < brojKorisnika; i++) {
-	}
+	}*/
 
+	fclose(dat);
 	return poljeKorisnika;
 }
 
@@ -584,4 +617,382 @@ char* generiranjeLozinke(void) {
 	}
 
 	return lozinka;
+}
+
+void klijentSucelje(KORISNIK* korisnik, const char *nazivDatoteke) {
+	int odabir;
+	int f = 1;
+	while (f != -1) {
+		printf("\nKLIJENT SUCELJE\n\nDobrodosli, %s\nUnesite jednu od zeljenih radnji:\n1) Ispis podataka\n2) Promjena lozinke\n3) Transakcije / Placanja\n4) POVRATAK U ADMIN DIO\nOdabir: ", korisnik->ime);
+		scanf("%d", &odabir);
+		switch (odabir) {
+		case 1:
+			printf("Ime: %s  Prezime: %s  OIB: %s  Datum: %d.%d.%d. Broj racuna: %d ID: %d\n", korisnik->ime, korisnik->prezime, korisnik->oib, korisnik->datum_rodenja.dan, korisnik->datum_rodenja.mjesec, korisnik->datum_rodenja.godina, korisnik->broj_racuna, korisnik->id);
+			break;
+		case 2:
+			promjenaLozinkeKlijenta(korisnik, nazivDatoteke);
+			break;
+		case 3:
+			upravljanjePlacanjemKlijenta(korisnik, "placanja.txt");
+			break;
+		case 4:
+			f = -1;
+			break;
+		default:
+			printf("Nepoznat odabir.");
+			break;
+		}
+	}
+}
+
+void promjenaLozinkeKlijenta(KORISNIK* korisnik, const char* nazivDatoteke) {
+	puts(nazivDatoteke);
+	printf("Unesite vasu trenutnu lozinku: ");
+	char lozinka[LOZINKA_N];
+	int i;
+	for (i = 0; i < LOZINKA_N - 1; i++) {
+		lozinka[i] = _getch();
+
+		printf("*");
+	}
+	lozinka[i] = '\0';
+	printf("\n");
+
+	if (strcmp(korisnik->lozinka, lozinka) == 0) {
+		printf("\nUnesite novu lozinku od 8 znakova: ");
+		for (i = 0; i < LOZINKA_N - 1; i++) {
+			lozinka[i] = _getch();
+
+			printf("*");
+		}
+		lozinka[i] = '\0';
+		strcpy(korisnik->lozinka, lozinka);
+	}
+	else {
+		printf("Neuspjeh.\n");
+	}
+
+	int pozicija_korisnika = 0;
+	for (i = 0; i < brojKorisnika; i++) {
+		if ((poljeKorisnika + i)->id == korisnik->id) {
+			break;
+		}
+		pozicija_korisnika++;
+	}
+
+	FILE* dat = fopen(nazivDatoteke, "rb+");
+	if (dat == NULL) {
+		perror("Upravljanje racunom");
+		return;
+	}
+
+
+	fseek(dat, 2 * sizeof(int) + sizeof(KORISNIK) * pozicija_korisnika, SEEK_SET);
+	fwrite(korisnik, sizeof(KORISNIK), 1, dat);
+	fclose(dat);
+	printf("\nUspjesno promijenjena lozinka.\n");
+}
+
+void upravljanjePlacanjemKlijenta(KORISNIK* korisnik, const char* placanja) {
+	FILE* placanja_dat = fopen(placanja, "r+");
+	if (placanja_dat == NULL) {
+		placanja_dat = fopen(placanja, "w");
+		if (placanja_dat == NULL) {
+			perror("Otvaranje datoteke za placanja");
+			return;
+		}
+	}
+	fclose(placanja_dat);
+	char trazeniIban[22];
+	int odabir, pozicija, f;
+	printf("1) Isplata na racun\n2) Ispis transakcija\nUnesite zeljenu radnju: ");
+	scanf("%d", &odabir);
+
+	switch (odabir) {
+	case 1:
+		printf("Unesite IBAN racuna kojim zelite izvrsiti isplatu: ");
+		scanf("%21s", trazeniIban);
+		pozicija = pretragaPoIbanuKlijent(korisnik, trazeniIban);
+		if (pozicija >= 0) {
+			if ((f = placanjeKlijenta(pozicija, placanja, korisnik, trazeniIban)) == 1) {
+				printf("Placanje je uspjesno izvrseno.\n");
+				break;
+			}
+			else {
+				printf("Placanje nije uspjesno izvrseno. \n");
+				break;
+			}
+		}
+		else {
+			break;
+		}
+		break;
+	case 2: 
+		ispisTransakcijaKlijent(korisnik, placanja);
+		break;
+	default: 
+		printf("Opcija nije pronadena.\n");
+		break;
+	}
+}
+
+
+int pretragaPoIbanuKlijent(KORISNIK* korisnik, char* trazeniIban) {
+
+	int i, f = -1, pozicija = 0;
+
+	pozicija = 0;
+	for (i = 0; i < korisnik->broj_racuna; i++) {
+		if (strcmp(korisnik->trasankc_racuni[i].iban, trazeniIban) == 0) {
+			f = 1;
+			break;
+		}
+		pozicija++;
+	}
+	if (f == -1) {
+		printf("IBAN nije pronaden.\n");
+		pozicija = -1;
+		return pozicija;
+	}
+
+	return pozicija;
+}
+
+int placanjeKlijenta(int pozicija, const char* placanja, KORISNIK* korisnik, char* trazeniIban) {
+	char odredisniIban[22];
+	int f = -1;
+	double odredisniNovac;
+
+	FILE *placanja_dat = fopen(placanja, "a+");
+	if (placanja_dat == NULL) {
+		perror("Otvaranje transakcijske datoteke");
+		return f;
+	}
+
+
+	printf("IBAN: %s\tSaldo: %lf", korisnik->trasankc_racuni[pozicija].iban, korisnik->trasankc_racuni[pozicija].saldo);
+
+	printf("\nUnesite IBAN kojem zelite izvrsiti uplatu: ");
+	scanf("%21s", odredisniIban);
+
+	printf("Koliko novca zelite prebaciti: ");
+	scanf("%lf", &odredisniNovac);
+
+	if (odredisniNovac > korisnik->trasankc_racuni[pozicija].saldo) {
+		printf("Nemate dovoljan iznos na racunu!");
+		return f;
+	}
+	else {
+		korisnik->trasankc_racuni[pozicija].saldo -= odredisniNovac;
+
+		// SADA SPREMAMO VRIJEDNOSTI UMANJENOG SALDA NA KORISNICKI RACUN U DATA.BIN
+		int pozicija_korisnika = 0, i;
+		for (i = 0; i < brojKorisnika; i++) {
+			if ((poljeKorisnika + i)->id == korisnik->id) {
+				break;
+			}
+			pozicija_korisnika++;
+		}
+
+		FILE* dat = fopen("data.bin", "rb+");
+		if (dat == NULL) {
+			perror("Upravljanje racunom");
+			f = -1;
+			return f;
+		}
+
+
+		fseek(dat, 2 * sizeof(int) + sizeof(KORISNIK) * pozicija_korisnika, SEEK_SET);
+		fwrite(korisnik, sizeof(KORISNIK), 1, dat);
+		fclose(dat);
+		// FORMAT ZA ISPIS U PLACANJA.TXT CE BITI IZVOR - ODREDISTE - IZNOS - ID IZVRSITELJA
+		fprintf(placanja_dat, "%s %s %lf %d\n", trazeniIban, odredisniIban, odredisniNovac, korisnik->id);
+		fclose(placanja_dat);
+
+
+		int x = provjeraOdredisnogIbana(odredisniNovac, odredisniIban, "data.bin");
+		// ODREDISNI KLIJENT NIJE KLIJENT NASE BANKE AKO JE X RAZLICIT OD 1, AKO JE X JEDAN, USPJESNO SMO IZVRSILI UPLATU NA ODREDISNI IBAN, SADA TREBAMO IZVORNI IBAN UMANJITI ZA IZNOS
+		x == 1 ? printf("Klijent nase banke.\n") : printf("Nije klijent nase banke.\n");
+		f = 1;
+	}
+	return f;
+}
+
+
+int provjeraOdredisnogIbana(double iznosUplate, char* trazeniIban, const char * nazivDatoteke) {
+	poljeKorisnika = ucitajKorisnike("data.bin");
+	if (poljeKorisnika == NULL) {
+		printf("Nema korisnika.");
+		return -1;
+	}
+
+	int i, j, f = -1, pozicija = 0;
+	int korisnik_i, korisnik_j;
+
+	for (i = 0; i < brojKorisnika; i++) {
+		for (j = 0; j < (poljeKorisnika + i)->broj_racuna; j++) {
+			if (strcmp((poljeKorisnika + i)->trasankc_racuni[j].iban, trazeniIban) == 0) {
+				f = 1;
+				korisnik_i = i;
+				korisnik_j = j;
+				(poljeKorisnika + korisnik_i)->trasankc_racuni[j].saldo += iznosUplate;
+				break;
+			}
+		}
+		if (f == 1) {
+			// POSTAVLJANJE ID-A NA PRONADENOG KORISNIKA
+			korisnik_id = (poljeKorisnika + korisnik_i)->id;
+			// DEBUG printf("Pronasli smo korisnika, ID je %d\n", korisnik_id);
+			// DEBUG printf("Saldo: %lf\n", (poljeKorisnika + korisnik_i)->trasankc_racuni[korisnik_j].saldo);
+			break;
+		}
+	}
+	if (f == -1) {
+		printf("IBAN nije pronaden.\n");
+		return f;
+	}
+
+	// KORISNIK JE KLIJENT NASE BANKE - SPREMAMO VRIJEDNOST SALDA ODREDISNOG KORISNIKA
+	int pozicija_korisnika = 0;
+	for (i = 0; i < brojKorisnika; i++) {
+		if ((poljeKorisnika + i)->id == korisnik_id) {
+			break;
+		}
+		pozicija_korisnika++;
+	}
+
+	KORISNIK* korisnik = (poljeKorisnika + korisnik_i);
+
+	// DEBUG printf("Saldo: %lf\n", korisnik->trasankc_racuni[korisnik_j].saldo);
+
+	FILE* dat = fopen("data.bin", "rb+");
+	if (dat == NULL) {
+		perror("Upravljanje racunom");
+		f = -1;
+		return f;
+	}
+
+
+	fseek(dat, 2 * sizeof(int) + sizeof(KORISNIK) * pozicija_korisnika, SEEK_SET);
+	fwrite(korisnik, sizeof(KORISNIK), 1, dat);
+	fclose(dat);
+
+
+	return f;
+
+}
+
+void ispisTransakcijaKlijent(KORISNIK* korisnik, const char* placanja) {
+	FILE* placanja_dat = fopen(placanja, "r");
+	if (placanja_dat == NULL) {
+		perror("Ispis transakcija kod klijenta");
+		return;
+	}
+	char izvorniIban[22], odredisniIban[22];
+	double iznosUplate;
+	int status, id_korisnika;
+	while ((status = fscanf(placanja_dat, "%s %s %lf %d\n", izvorniIban, odredisniIban, &iznosUplate, &id_korisnika)) >= 0) {
+		if (id_korisnika == korisnik->id) {
+			printf("Izvor: %s Odrediste: %s Iznos uplate: %.2lf\n", izvorniIban, odredisniIban, iznosUplate);
+		}
+	}
+
+	return;
+}
+
+void ispisSvihTransakcija(const char* placanja) {
+	FILE* placanja_dat = fopen(placanja, "r");
+	if (placanja_dat == NULL) {
+		perror("Ispis transakcija");
+		return;
+	}
+	char izvorniIban[22], odredisniIban[22];
+	double iznosUplate;
+	int status, id_korisnika, br_transakcija = 0, i;
+	while ((status = fscanf(placanja_dat, "%s %s %lf %d\n", izvorniIban, odredisniIban, &iznosUplate, &id_korisnika)) >= 0) {
+		printf("Izvor: %s Odrediste: %s Iznos uplate: %.2lf\tID korisnika: %d\n", izvorniIban, odredisniIban, iznosUplate, id_korisnika);
+		br_transakcija++;
+	}
+
+	
+	double *poljeIznosa = (double*)calloc(br_transakcija, sizeof(double));
+	if (poljeIznosa == NULL) {
+		exit(EXIT_FAILURE);
+	}
+
+	rewind(placanja_dat);
+	for (i = 0; i < br_transakcija; i++) {
+		fscanf(placanja_dat, "%s %s %lf %d\n", izvorniIban, odredisniIban, (poljeIznosa + i ), &id_korisnika);
+	}
+
+	sortiranje(poljeIznosa, br_transakcija, 1);
+
+	printf("Iznosi transakcija sortirani uzlazno: \n");
+	for (i = 0; i < br_transakcija; i++) {
+		printf("%.2lfHRK\n", *(poljeIznosa + i));
+	}
+
+	free(poljeIznosa);
+	poljeIznosa = NULL;
+	fclose(placanja_dat);
+
+}
+
+void zamjena(double* const veci, double* const manji) {
+	double temp = 0;
+	temp = *manji;
+	*manji = *veci;
+	*veci = temp;
+}
+
+void unos(void) {
+	char znak;
+	if ((znak = getchar()) != '\n') {
+		unos();
+	}
+	putchar(znak);
+}
+
+
+void sortiranje(double *polje, const int n, const int mod_upravljanja) {
+	int min = -1;
+	for (int i = 0; i < n - 1; i++)
+	{
+		min = i;
+		for (int j = i + 1; j < n; j++)
+		{
+			if (polje[j] < polje[min]) {
+				min = j;
+			}
+		}
+		zamjena(&polje[i], &polje[min]);
+	}
+}
+
+void sortiranjeImenaKorisnika(const char * nazivDatoteke) {
+	poljeKorisnika = ucitajKorisnike(nazivDatoteke);
+	KORISNIK temp = { 0 };
+	strcpy(temp.ime, "A");
+	if (poljeKorisnika == NULL) {
+		perror("Zauzimanje memorije za korisnike");
+		return;
+	}
+	int i, j;
+
+
+	// PRIMJENA BUBBLE SORT ALGORITMA ZA SORTIRANJE, USPOREDUJU SE SUSJEDNA POLJA
+	for (i = 0; i < brojKorisnika - 1; i++) {
+		for (j = i + 1; j < brojKorisnika; j++) {
+			if (_strcmpi((poljeKorisnika + i)->ime, (poljeKorisnika + j)->ime) > 0) {
+				temp = poljeKorisnika[i];
+				poljeKorisnika[i] = poljeKorisnika[j];
+				poljeKorisnika[j] = temp;
+			}
+		}
+	}
+
+
+	for (i = 0; i < brojKorisnika; i++) {
+		printf("%s\n", (poljeKorisnika + i)->ime);
+	}
 }

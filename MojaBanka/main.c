@@ -8,7 +8,6 @@
 int main(void) {
 
 	srand((unsigned)time(NULL));
-	//stvoriKonekciju();
 
 	const char* nazivDatoteke = "data.bin";
 

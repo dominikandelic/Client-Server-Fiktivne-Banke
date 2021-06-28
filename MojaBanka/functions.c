@@ -4,7 +4,6 @@
 #include <string.h>
 #include <conio.h>
 #define LOZINKA_N 9
-void unos(void);
 
 static int brojKorisnika = 0;
 static KORISNIK* trazeni;
@@ -134,10 +133,8 @@ void izbornik(const char* nazivDatoteke) {
 			ispisSvihTransakcija(placanja);
 			break;
 		case 12:
+			// BUBBLE SORT
 			sortiranjeImenaKorisnika(nazivDatoteke);
-			break;
-		case 13:
-			unos();
 			break;
 		default:
 			printf("Unijeli ste opciju koja ne postoji.\n");
@@ -308,6 +305,10 @@ void brisanjeKorisnika(KORISNIK* trazeniKorisnik, const char* nazivDatoteke) {
 	FILE* dat = fopen(nazivDatoteke, "rb+");
 	if (dat == NULL) {
 		perror("Brisanje korisnika iz datoteke data.bin");
+		if (poljeKorisnika != NULL) {
+			free(poljeKorisnika);
+			poljeKorisnika = NULL;
+		}
 		exit(EXIT_FAILURE);
 	}
 
@@ -344,6 +345,10 @@ void brisanjeKorisnika(KORISNIK* trazeniKorisnik, const char* nazivDatoteke) {
 }
 
 void dodajRacun(KORISNIK* trazeniKorisnik, const char* nazivDatoteke) {
+	if (trazeniKorisnik->broj_racuna >= 4) {
+		printf("Mozete maksimalno 4 racuna dodijeliti odredenom korisniku.\n");
+		return;
+	}
 	printf("Odaberite koji tip racuna zelite otvoriti klijentu: \n1) Ziro racun\n2) Tekuci racun\n3) Devizni racun\nOdabir: ");
 	int pozicija = 0, i;
 
@@ -917,6 +922,10 @@ void ispisSvihTransakcija(const char* placanja) {
 	
 	double *poljeIznosa = (double*)calloc(br_transakcija, sizeof(double));
 	if (poljeIznosa == NULL) {
+		if (poljeKorisnika != NULL) {
+			free(poljeKorisnika);
+			poljeKorisnika = NULL;
+		}
 		exit(EXIT_FAILURE);
 	}
 
@@ -944,15 +953,6 @@ void zamjena(double* const veci, double* const manji) {
 	*manji = *veci;
 	*veci = temp;
 }
-
-void unos(void) {
-	char znak;
-	if ((znak = getchar()) != '\n') {
-		unos();
-	}
-	putchar(znak);
-}
-
 
 void sortiranje(double *polje, const int n, const int mod_upravljanja) {
 	int min = -1;
